@@ -4,6 +4,12 @@ Load data
 '''
 def loadSimpDat():
     simpDat = [['I1','I2','I5'],['I2','I4'],['I2','I3'],['I1','I2','I4'],['I1','I3'],['I2','I3'],['I1','I3'],['I1','I2','I3','I5'],['I1','I2','I3']]
+    '''simpDat=[]
+    with open('Example_data.txt', 'r') as f:
+        for line in f.readlines():
+            L=line.split(',')
+            L[-1]=L[-1].replace('\n','')
+            simpDat.append(L)'''
     return simpDat
 
 #tree node
@@ -27,12 +33,15 @@ def GenC1(trans,min_support):
         for ii in set(i):
             if ii not in C1:
                 try:
-                    C1[ii]=ii.values()
+                    C1[ii]=trans[i]
                 except:
                     C1[ii]=1
             else:
-                C1[ii]+=1
-    C1={key:value for key, value in C1.items() if value/len(trans)>=min_support}#include min_support
+                try:
+                    C1[ii]+=trans[i]
+                except:
+                    C1[ii]+=1
+    C1={key:value for key, value in C1.items() if value>=min_support}#include min_support
     return {i:[k,None] for i,k in sorted(C1.items(),key=lambda x:x[1],reverse=True)}
 
 def link_same_items(curr,targetNode):
@@ -63,14 +72,15 @@ def updateTree_Table(SortedItems,FPTree,headertable,count):
 
 def Build_tree(trans,headertable,count=1):
     recTree=TreeNode('Null',1,None)
-    for itemset in trans:
+    for iii,itemset in enumerate(trans):
         #order the itemset according to the header table
+        itemset=[i for i in itemset if i in headertable]
         if len(itemset)>0:
-            if len(itemset)>1:
-                SortedItems=sorted(list(itemset),key=lambda x:headertable[x][0],reverse=True)
-            else:
-                SortedItems=sorted(itemset,key=lambda x:headertable[x][0],reverse=True)
-            updateTree_Table(SortedItems,recTree,headertable,count)
+            SortedItems=sorted(list(itemset),key=lambda x:headertable[x][0],reverse=True)
+            try:
+                updateTree_Table(SortedItems,recTree,headertable,count[iii])
+            except:
+                updateTree_Table(SortedItems,recTree,headertable,count)
     return recTree,headertable
 
 '''
@@ -97,27 +107,67 @@ def mineTree(inTree, headertable, min_support, preFix, freqItemList):
         newFreqSet = preFix.copy()
         newFreqSet.add(baseitem)
         freqItemList.append(newFreqSet)
+        #print('newFreqSet:',newFreqSet)
+        #print('Freqitemls:',freqItemList)
 
         # Conditional Pattern Base
         CPB = findPrefixPath(baseitem, headertable[baseitem][1])
-        if len(CPB)!=0:
-            print(pd.DataFrame({'Item':[str(baseitem) for i in range(len(CPB))],'Prefix':[(i) for i in CPB]}))
-
+        #if len(CPB)!=0:
+            #print(pd.DataFrame({'Item':[str(baseitem) for i in range(len(CPB))],'Prefix':[(i) for i in CPB],'count':[(i) for i in CPB.values()]}))
         CPBC1=GenC1(CPB,min_support)
-        if len(CPBC1)!=0:
-            print(CPBC1)
-            print('-'*30)
-        CondFPTree, Condheadertable = Build_tree(list(CPB.keys()),CPBC1,1)
+        #if len(CPBC1)!=0:
+            #print(CPBC1)
+            #print('-'*30)
+        CondFPTree, Condheadertable = Build_tree(list(CPB.keys()),CPBC1,list(CPB.values()))
         if Condheadertable is not None:
             #myCondTree.disp(1)
             mineTree(CondFPTree, Condheadertable, min_support, newFreqSet, freqItemList)
 
 
+'''
+Generate Support Number
+'''
+#main problem {'I1'}->{'I','1'}
+def calSuppData(FPtree,headerTable, freqItemList, total):
+    suppData = {}
+    for Item in freqItemList:
+        if len(Item)==1:
+            Item_0=Item
+        else:
+            Item_0=Item[0]
+        Item = sorted(Item, key=lambda x:headerTable[x][0])
+        base = findPrefixPath(Item[0], headerTable[Item[0]][1])
+        print('Base Before:', base)
+        base={frozenset(set(each_base).union(Item[0])):value for each_base,value in base.items()}
+        print('Base After:', base)
+        if Item[0] in FPtree.children.keys():
+            base[Item[0]]=FPtree.children[Item[0]].count+base.get(Item[0],0)
+        # 计算支持度
+        support = 0
+        for B in base:
+            print('Item:',frozenset(Item))
+            print('B:',B,base[B])
+            if not isinstance(B,str):
+                set_B=set(B)
+            else:
+                set_B={B}
+            if frozenset(Item).issubset(set_B):
+                support += base[B]
+            print('Support:',support)
+        print('-'*40)
+        # 对于根的儿子，没有条件模式基
+        if len(base)==0 and len(Item)==1:
+            support = headerTable[Item[0]][0]
+        suppData[frozenset(Item)] = support#/float(total)
+    return suppData
+
 if __name__=='__main__':
-    min_support=0.6
     simpDat=loadSimpDat()
+    min_support=1.9/9*len(simpDat)
     C1=GenC1(simpDat,min_support)
     myTree,myHeader=Build_tree(simpDat,C1)
-else:
     freqItemList,preFix=[],set([])
     mineTree(myTree, myHeader, min_support, preFix, freqItemList)
+
+    Support=calSuppData(myTree,myHeader,freqItemList,len(simpDat))
+
