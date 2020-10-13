@@ -1,4 +1,5 @@
 import pandas as pd
+import itertools
 '''
 Load data
 '''
@@ -127,13 +128,13 @@ def mineTree(inTree, headertable, min_support, preFix, freqItemList):
 '''
 Generate Support Number
 '''
-def calSuppData(FPtree,headerTable, freqItemList, total):
+def calSuppData(FPtree,headerTable, freqItemList):
     suppData = {}
     for Item in freqItemList:
         base={}
-        print('*'*10)
-        print(Item)
-        print('*'*10)
+        #print('*'*10)
+        #print(Item)
+        #print('*'*10)
         # Search from smallest to largest
         Item = sorted(Item, key=lambda x:headerTable[x][0])
         for ii in range(len(Item)):
@@ -144,28 +145,54 @@ def calSuppData(FPtree,headerTable, freqItemList, total):
             if Item[ii] in FPtree.children.keys():
                 prebase[Item[ii]]=FPtree.children[Item[ii]].count+prebase.get(Item[ii],0)
             #print('Base After:', prebase)
-            print('Item:',Item[ii],'preBase:', prebase)
+            #print('Item:',Item[ii],'preBase:', prebase)
             base.update(prebase)
-            print('Base:',base)
+            #print('Base:',base)
 
-
-        # 计算支持度
-        print('-----Start to count:')
+        #print('-----Start to count:')
         support = 0
         for B in base:
-            print('Item:',frozenset(Item))
-            print('B:',B,base[B])
+            #print('Item:',frozenset(Item))
+            #print('B:',B,base[B])
             if not isinstance(B,str):
                 set_B=set(B)
             else:
                 set_B={B}
             if frozenset(Item).issubset(set_B):
                 support += base[B]
-            print('Support:',support)
-        print('-'*40)
+            #print('Support:',support)
+        #print('-'*40)
 
-        suppData[frozenset(Item)] = support#/float(total)
+        suppData[frozenset(Item)] = support
     return suppData
+
+
+'''
+Generate Confidence
+'''
+def calconf(FPtree,headerTable,freqItemList,Support):
+    for itemset in freqItemList:
+        itemset_leng=len(itemset)
+        n=1
+
+        Test=[set(i) for i in itertools.combinations(itemset,n)]
+        Rest=[itemset-i for i in Test]
+        S=Support[frozenset(itemset)]
+        print('Test:',Test)
+        print('Rest:',Rest)
+        try:
+            Confidence=calSuppData(FPtree,headerTable,Rest)
+            #print('Condidence:',Confidence)
+            Confidence_value=[Confidence[frozenset(i)] for i in Rest]
+            #print('Confidence_value:',Confidence_value)
+            for rule in range(len(Test)):
+                print(Test[rule],'--->',Rest[rule],'Confidence:',Confidence_value[rule],'Support:',S)
+        except:
+            raise
+        print('-'*50)
+
+        #Test=[i for i in Test if i not in From]
+
 
 if __name__=='__main__':
     simpDat=loadSimpDat()
@@ -174,6 +201,10 @@ if __name__=='__main__':
     myTree,myHeader=Build_tree(simpDat,C1)
     freqItemList,preFix=[],set([])
     mineTree(myTree, myHeader, min_support, preFix, freqItemList)
+    Support=calSuppData(myTree,myHeader,freqItemList)#{Frozenset:count}
 
-    Support=calSuppData(myTree,myHeader,freqItemList,len(simpDat))
-
+    Support[frozenset([])] = 1.0
+    #freqItems = [frozenset(x) for x in freqItemList]
+    print(freqItemList)
+    min_conf=0.0
+    calconf(myTree,myHeader,freqItemList,Support)
