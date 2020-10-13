@@ -1,4 +1,5 @@
 import pandas as pd
+import itertools
 
 '''
 Get Seed and repeat
@@ -25,26 +26,33 @@ def scanD(D, Ck, minSupport):
                     ssCnt[can] = 1
                 else:
                     ssCnt[can] += 1
-    print('Cn with count:',pd.DataFrame.from_dict(ssCnt,orient='index'))
+    #print('Cn with count:',pd.DataFrame.from_dict(ssCnt,orient='index'))
     # Check weather meet minimum support or not, remove the ones below
     numItems = float(len(D))
     retList = []
     supportData = {}
     for key in ssCnt:
         support = ssCnt[key]/numItems
-        print('support',support,'min_support',minSupport,'Bool',support >= minSupport)
+        #print('support',support,'min_support',minSupport,'Bool',support >= minSupport)
         if support >= minSupport:
             retList.insert(0, key)
             supportData[key] = support
-    print('supportData:',pd.DataFrame.from_dict(supportData,orient='index'))
-    print('-'*30)
+    #print('supportData:',pd.DataFrame.from_dict(supportData,orient='index'))
+    #print('-'*30)
     return retList, supportData
+
+def notRedundant(mergedlist,Lkm1,km1,l1,l2):
+    sub_mergedlist=[set(i) for i in itertools.combinations(mergedlist,km1) if set(i) not in [l1,l2]]
+    for i in sub_mergedlist:
+        if i not in Lkm1:
+            return False
+    return True
 
 
 #Generate Ck according to Lk
 def aprioriGen(Lk, k):
-    #print('AprioriGen',Lk)
-    #print('AprioriGen',k)
+    print('AprioriGen Lk',Lk)
+    print('AprioriGen k',k)
     retList = []
     lenLk = len(Lk)
     for i in range(lenLk):
@@ -55,7 +63,12 @@ def aprioriGen(Lk, k):
             L2.sort()
             #If the all elements exept the last are same, merge two elements
             if L1 == L2:
-                retList.append(Lk[i] | Lk[j])
+                mergedlist=Lk[i] | Lk[j]
+                print('---------',mergedlist,k-1)
+                if notRedundant(mergedlist,Lk,k-1,Lk[i],Lk[j]):
+                    retList.append(mergedlist)
+                else:
+                    print('----Remove-----',mergedlist,k-1)
     return retList
 
 
@@ -73,12 +86,13 @@ def apriori(dataSet, minSupport=0.5):
     L = [L1]
     k = 2 #help to put values in L
     while (len(L[k-2]) > 0):
-        #print('L_',k-2,L[k-2])
+        print('L_',k-2,L[k-2])
         Ck = aprioriGen(L[k-2], k) 
-        #print(pd.DataFrame({'Ck':Ck}))
+        print(pd.DataFrame({'Ck':Ck}))
         Lk, supK = scanD(D, Ck, minSupport) 
+        print(pd.DataFrame(supK.values(),supK.keys()))
         supportData.update(supK)
-        #print('*'*10)
+        print('*'*10)
         if len(Lk) == 0:
             break
         # all the Lk generated along the way are put into L.
