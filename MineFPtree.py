@@ -186,9 +186,9 @@ def calconf(FPtree,headerTable,freqItemList,Support):
             print('Test:',Test)
             print('Rest:',Rest)
             try:
-                Confidence=calSuppData(FPtree,headerTable,Rest)
+                Confidence=calSuppData(FPtree,headerTable,Test)
                 #print('Condidence:',Confidence)
-                Confidence_value=[Confidence[frozenset(i)] for i in Rest]
+                Confidence_value=[Confidence[frozenset(i)] for i in Test]
                 #print('Confidence_value:',Confidence_value)
                 for rule in range(len(Test)):
                     allrules.append((itemset,Test[rule],Rest[rule],Confidence_value[rule],S))
