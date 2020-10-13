@@ -127,17 +127,23 @@ def mineTree(inTree, headertable, min_support, preFix, freqItemList):
 '''
 Generate Support Number
 '''
-#main problem {'I1'}->{'I','1'}
 def calSuppData(FPtree,headerTable, freqItemList, total):
     suppData = {}
     for Item in freqItemList:
+        print('*'*10)
+        print(Item)
+        print('*'*10)
+        # Search from smallest to largest
         Item = sorted(Item, key=lambda x:headerTable[x][0])
         base = findPrefixPath(Item[0], headerTable[Item[0]][1])
-        print('Base Before:', base)
-        base={frozenset(set(each_base).union(Item[0])):value for each_base,value in base.items()}
-        print('Base After:', base)
+        print('Item_0:',Item[0],'Base Before:', base)
+
+        base={frozenset(set(each_base).union({Item[0]})):value for each_base,value in base.items()}
         if Item[0] in FPtree.children.keys():
             base[Item[0]]=FPtree.children[Item[0]].count+base.get(Item[0],0)
+        print('Base After:', base)
+
+
         # 计算支持度
         support = 0
         for B in base:
@@ -151,9 +157,7 @@ def calSuppData(FPtree,headerTable, freqItemList, total):
                 support += base[B]
             print('Support:',support)
         print('-'*40)
-        # 对于根的儿子，没有条件模式基
-        if len(base)==0 and len(Item)==1:
-            support = headerTable[Item[0]][0]
+
         suppData[frozenset(Item)] = support#/float(total)
     return suppData
 
