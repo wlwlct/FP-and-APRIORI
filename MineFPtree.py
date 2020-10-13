@@ -130,21 +130,27 @@ Generate Support Number
 def calSuppData(FPtree,headerTable, freqItemList, total):
     suppData = {}
     for Item in freqItemList:
+        base={}
         print('*'*10)
         print(Item)
         print('*'*10)
         # Search from smallest to largest
         Item = sorted(Item, key=lambda x:headerTable[x][0])
-        base = findPrefixPath(Item[0], headerTable[Item[0]][1])
-        print('Item_0:',Item[0],'Base Before:', base)
+        for ii in range(len(Item)):
+            prebase = findPrefixPath(Item[ii], headerTable[Item[ii]][1])
+            #print('Item:',Item[ii],'Base Before:', prebase)
 
-        base={frozenset(set(each_base).union({Item[0]})):value for each_base,value in base.items()}
-        if Item[0] in FPtree.children.keys():
-            base[Item[0]]=FPtree.children[Item[0]].count+base.get(Item[0],0)
-        print('Base After:', base)
+            prebase={frozenset(set(each_base).union({Item[ii]})):value for each_base,value in prebase.items()}
+            if Item[ii] in FPtree.children.keys():
+                prebase[Item[ii]]=FPtree.children[Item[ii]].count+prebase.get(Item[ii],0)
+            #print('Base After:', prebase)
+            print('Item:',Item[ii],'preBase:', prebase)
+            base.update(prebase)
+            print('Base:',base)
 
 
         # 计算支持度
+        print('-----Start to count:')
         support = 0
         for B in base:
             print('Item:',frozenset(Item))
