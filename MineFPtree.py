@@ -171,27 +171,34 @@ def calSuppData(FPtree,headerTable, freqItemList):
 Generate Confidence
 '''
 def calconf(FPtree,headerTable,freqItemList,Support):
+    allrules=[]
     for itemset in freqItemList:
-        itemset_leng=len(itemset)
-        n=1
-
-        Test=[set(i) for i in itertools.combinations(itemset,n)]
-        Rest=[itemset-i for i in Test]
         S=Support[frozenset(itemset)]
-        print('Test:',Test)
-        print('Rest:',Rest)
-        try:
-            Confidence=calSuppData(FPtree,headerTable,Rest)
-            #print('Condidence:',Confidence)
-            Confidence_value=[Confidence[frozenset(i)] for i in Rest]
-            #print('Confidence_value:',Confidence_value)
-            for rule in range(len(Test)):
-                print(Test[rule],'--->',Rest[rule],'Confidence:',Confidence_value[rule],'Support:',S)
-        except:
-            raise
-        print('-'*50)
-
-        #Test=[i for i in Test if i not in From]
+        check_leng=len(itemset)-1
+        if check_leng==0:
+            allrules.append((itemset,itemset,'nan',headerTable[list(itemset)[0]][0],S))
+            #print(itemset,':',headerTable[list(itemset)[0]][0])
+            print(itemset,'--->','Nothing','Confidence:',headerTable[list(itemset)[0]][0],'Support:',S)
+        for i in range(check_leng):
+            n=i+1
+            Test=[set(i) for i in itertools.combinations(itemset,n)]
+            Rest=[itemset-i for i in Test]
+            print('Test:',Test)
+            print('Rest:',Rest)
+            try:
+                Confidence=calSuppData(FPtree,headerTable,Rest)
+                #print('Condidence:',Confidence)
+                Confidence_value=[Confidence[frozenset(i)] for i in Rest]
+                #print('Confidence_value:',Confidence_value)
+                for rule in range(len(Test)):
+                    allrules.append((itemset,Test[rule],Rest[rule],Confidence_value[rule],S))
+                    print(Test[rule],'--->',Rest[rule],'Confidence:',Confidence_value[rule],'Support:',S)
+            except:
+                raise
+            print('-'*50)
+    return allrules
+    
+            #Test=[i for i in Test if i not in From]
 
 
 if __name__=='__main__':
@@ -207,4 +214,4 @@ if __name__=='__main__':
     #freqItems = [frozenset(x) for x in freqItemList]
     print(freqItemList)
     min_conf=0.0
-    calconf(myTree,myHeader,freqItemList,Support)
+    Conf=calconf(myTree,myHeader,freqItemList,Support)
