@@ -131,10 +131,6 @@ Generate Support Number
 def calSuppData(FPtree,headerTable, freqItemList, total):
     suppData = {}
     for Item in freqItemList:
-        if len(Item)==1:
-            Item_0=Item
-        else:
-            Item_0=Item[0]
         Item = sorted(Item, key=lambda x:headerTable[x][0])
         base = findPrefixPath(Item[0], headerTable[Item[0]][1])
         print('Base Before:', base)
