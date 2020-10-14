@@ -1,0 +1,174 @@
+import pandas as pd
+import itertools
+
+'''
+Get Seed and repeat
+'''
+# Generate seed C1
+def createC1(dataSet):
+    C1 = []
+    for transaction in dataSet:
+        for item in transaction:
+            if not [item] in C1:
+                C1.append([item])
+    C1.sort()
+    return [frozenset(i) for i in C1]
+
+
+#Scan through datasets, remove the ones below min support
+def scanD(D, Ck, minSupport):
+    # Generate counts for the C
+    print('D',D)
+    print('Ck',Ck)
+    ssCnt = {}
+    for tid in D:
+        for can in Ck:
+            if can.issubset(tid):
+                if can not in ssCnt:
+                    ssCnt[can] = 1
+                else:
+                    ssCnt[can] += 1
+    print('Cn with count:',pd.DataFrame.from_dict(ssCnt,orient='index'))
+    
+    # Check weather meet minimum support or not, remove the ones below
+    numItems = float(len(D))
+    retList = []
+    supportData = {}
+    for key in ssCnt:
+        support = ssCnt[key]/numItems
+        #print('support',support,'min_support',minSupport,'Bool',support >= minSupport)
+        if support >= minSupport:
+            retList.insert(0, key)
+            supportData[key] = support
+    print('supportData:',pd.DataFrame.from_dict(supportData,orient='index'))
+    print('-'*30)
+    return retList, supportData
+
+def notRedundant(mergedlist,Lkm1,km1,l1,l2):
+    sub_mergedlist=[set(i) for i in itertools.combinations(mergedlist,km1) if set(i) not in [l1,l2]]
+    for i in sub_mergedlist:
+        if i not in Lkm1:
+            return False
+    return True
+
+
+#Generate Ck according to Lk
+def aprioriGen(Lk, k):
+    #print('AprioriGen Lk',Lk)
+    #print('AprioriGen k',k)
+    retList = []
+    lenLk = len(Lk)
+    for i in range(lenLk):
+        for j in range(i+1, lenLk):
+            L1 = list(Lk[i])[: k-2]
+            L2 = list(Lk[j])[: k-2]
+            L1.sort()
+            L2.sort()
+            #If the all elements exept the last are same, merge two elements
+            if L1 == L2:
+                mergedlist=Lk[i] | Lk[j]
+                #print('---------',mergedlist,k-1)
+                if notRedundant(mergedlist,Lk,k-1,Lk[i],Lk[j]):
+                    retList.append(mergedlist)
+                #else:
+                #    print('----Remove-----',mergedlist,k-1)
+    return retList
+
+
+def apriori(dataSet, minSupport=0.5):
+    #Generate C1 
+    C1 = createC1(dataSet)
+    D=list(map(set,dataSet))
+    L1, supportData = scanD(D, C1, minSupport)
+
+    #print('supportData',pd.DataFrame(supportData.values(),supportData.keys()))
+    #print('L1',(L1))
+    #print('------Seed------'*5,'\n')
+
+    #repeatively generate L and C
+    L = [L1]
+    k = 2 #help to put values in L
+    while (len(L[k-2]) > 0):
+        #print('L_',k-2,L[k-2])
+        Ck = aprioriGen(L[k-2], k) 
+        #print(pd.DataFrame({'Ck':Ck}))
+        Lk, supK = scanD(D, Ck, minSupport) 
+        #print(pd.DataFrame(supK.values(),supK.keys()))
+        supportData.update(supK)
+        #print('*'*10)
+        if len(Lk) == 0:
+            break
+        # all the Lk generated along the way are put into L.
+        L.append(Lk)
+        k += 1
+    return L, supportData
+
+
+'''
+Mine Association Rule
+'''
+#the real calculation from the table
+def calcConf(freqSet, H, supportData, brl, minConf=0.7):
+    prunedH = []
+    for conseq in H:
+        conf = supportData[freqSet]/supportData[freqSet-conseq]
+        #print('freqSet:',freqSet)
+        #print('conseq:',conseq)
+        #print('freqSet-conseq',freqSet-conseq)
+        #print('conf:',conf)
+        if conf >= minConf:
+            #print(freqSet-conseq, '-->', conseq, 'conf:', conf)
+            brl.append((freqSet,freqSet-conseq, conseq,supportData[freqSet-conseq],supportData[freqSet]))
+            prunedH.append(conseq)
+    return prunedH
+
+# Generate set
+def rulesFromConseq(freqSet, H, supportData, brl, minConf=0.7):
+    #print('*'*10,H[0])
+    m = len(H[0])
+    if (len(freqSet) > (m + 1)):
+        Hmp1 = aprioriGen(H, m+1)
+        #print('*'*20,Hmp1)
+        Hmp1 = calcConf(freqSet, Hmp1, supportData, brl, minConf)
+        #print('Hmp1=', Hmp1)
+        #print('len(Hmp1)=', len(Hmp1), 'len(freqSet)=', len(freqSet))
+        if (len(Hmp1) >= 1):
+            rulesFromConseq(freqSet, Hmp1, supportData, brl, minConf)
+
+# Combine all rules
+def generateRules(L, supportData, minConf=0.7):
+    bigRuleList = []
+    for i in range(1, len(L)):
+        for freqSet in L[i]:
+            H1 = [frozenset([item]) for item in freqSet]
+            #print(H1)
+            if (i > 1):
+                rulesFromConseq(freqSet, H1, supportData, bigRuleList, minConf)
+            else:
+                calcConf(freqSet, H1, supportData, bigRuleList, minConf)
+            #print('-'*30)
+    return bigRuleList
+
+#partition
+def partition(fulldataSet,n,minSupport):#n specific how many partitions you want
+    split=[i for i in range(0,len(fulldataSet),round(len(fulldataSet)/n))]
+    A=[(split[i],split[i+1]) if i+1!=len(split) else (split[i],len(fulldataSet)) for i in range(len(split))]
+    partitionL=[]
+    #print(partitionL)
+    for i in A:
+        sub_dataset=fulldataSet[i[0]:i[1]]
+        LI,_ = apriori(sub_dataset, minSupport)
+        flat_list = [item for sublist in LI for item in sublist]
+        partitionL=partitionL+flat_list
+    print(len(set(partitionL)))
+    print('***last scan***'*8)
+    alllist, allsupport=scanD(fulldataSet,list(set(partitionL)),minSupport)
+    return alllist,allsupport
+
+
+
+if __name__ == "__main__":
+    dataSet = [['I1','I2','I5'],['I2','I4'],['I2','I3'],['I1','I2','I4'],['I1','I3'],['I2','I3'],['I1','I3'],['I1','I2','I3','I5'],['I1','I2','I3']]
+    LI, S = apriori(dataSet, minSupport=1.9/9)
+    print(LI)
+    LP,SP=partition(dataSet,3,minSupport=1.9/9)
