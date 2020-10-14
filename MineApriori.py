@@ -1,6 +1,5 @@
 import pandas as pd
 import itertools
-
 '''
 Get Seed and repeat
 '''
@@ -32,7 +31,7 @@ def scanD(D, Ck, minSupport):
     retList = []
     supportData = {}
     for key in ssCnt:
-        support = ssCnt[key]/numItems
+        support = ssCnt[key]#/numItems
         #print('support',support,'min_support',minSupport,'Bool',support >= minSupport)
         if support >= minSupport:
             retList.insert(0, key)
@@ -118,13 +117,14 @@ def calcConf(freqSet, H, supportData, brl, minConf=0.7):
             prunedH.append(conseq)
     return prunedH
 
-
 def rulesFromConseq(freqSet, H, supportData, brl, minConf=0.7):
-    #print('*'*10,H[0])
     m = len(H[0])
-    if (len(freqSet) > (m + 1)):
+    #print('*'*10*m,'H[0]',H[0])
+    #print('H:',H)
+    if (len(freqSet) >(m+1)):
+        H = calcConf(freqSet, H, supportData, brl, minConf)
         Hmp1 = aprioriGen(H, m+1)
-        #print('*'*20,Hmp1)
+        #print('*'*20*m,Hmp1)
         Hmp1 = calcConf(freqSet, Hmp1, supportData, brl, minConf)
         #print('Hmp1=', Hmp1)
         #print('len(Hmp1)=', len(Hmp1), 'len(freqSet)=', len(freqSet))
@@ -135,10 +135,10 @@ def rulesFromConseq(freqSet, H, supportData, brl, minConf=0.7):
 def generateRules(L, supportData, minConf=0.7):
     bigRuleList = []
     for i in range(1, len(L)):
-        for freqSet in L[i]:
+        for freqSet in L[i]:#wont calculate with frequent item=1
             H1 = [frozenset([item]) for item in freqSet]
-            #print(H1)
-            if (i > 1):
+            #print('H1',H1)
+            if (i > 1):#if only has two items, no need to split the relation
                 rulesFromConseq(freqSet, H1, supportData, bigRuleList, minConf)
             else:
                 calcConf(freqSet, H1, supportData, bigRuleList, minConf)
@@ -152,10 +152,9 @@ def printrules(rules):
     Ruletable['Confidence']=Ruletable['Support Number']/Ruletable['Confident number']
     return Ruletable
 
-
 if __name__ == "__main__":
     dataSet = [['I1','I2','I5'],['I2','I4'],['I2','I3'],['I1','I2','I4'],['I1','I3'],['I2','I3'],['I1','I3'],['I1','I2','I3','I5'],['I1','I2','I3']]
-    LI, S = apriori(dataSet, minSupport=1.9/9)
-    #print(LI)
+    LI, S = apriori(dataSet, minSupport=2)
+    #S[frozenset()]=1.0
     rules = generateRules(LI, S, minConf=0)
-    #printrules(rules)
+    #print(printrules(rules))
