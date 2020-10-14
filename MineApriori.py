@@ -33,7 +33,7 @@ def scanD(D, Ck, minSupport):
     for key in ssCnt:
         support = ssCnt[key]#/numItems
         #print('support',support,'min_support',minSupport,'Bool',support >= minSupport)
-        if support >= minSupport:
+        if support >= minSupport*numItems:
             retList.insert(0, key)
             supportData[key] = support
     #print('supportData:',pd.DataFrame.from_dict(supportData,orient='index'))
@@ -152,9 +152,14 @@ def printrules(rules):
     Ruletable['Confidence']=Ruletable['Support Number']/Ruletable['Confident number']
     return Ruletable
 
+def printsupport(S):
+    S_table=pd.DataFrame.from_dict(S,orient='index').reset_index()
+    S_table.columns=['itemset','support']
+    S_table
+    return S_table
+
 if __name__ == "__main__":
     dataSet = [['I1','I2','I5'],['I2','I4'],['I2','I3'],['I1','I2','I4'],['I1','I3'],['I2','I3'],['I1','I3'],['I1','I2','I3','I5'],['I1','I2','I3']]
-    LI, S = apriori(dataSet, minSupport=2)
-    #S[frozenset()]=1.0
+    LI, S = apriori(dataSet, minSupport=1.9/9)
     rules = generateRules(LI, S, minConf=0)
-    #print(printrules(rules))
+    #printrules(rules)
