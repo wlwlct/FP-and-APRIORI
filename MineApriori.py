@@ -145,6 +145,12 @@ def generateRules(L, supportData, minConf=0.7):
             #print('-'*30)
     return bigRuleList
 
+def printrules(rules):
+    C=['Frequent itemset','From','To','Confident number','Support Number']
+    Ruletable=pd.DataFrame(rules)
+    Ruletable.columns=C
+    Ruletable['Confidence']=Ruletable['Support Number']/Ruletable['Confident number']
+    return Ruletable
 
 
 if __name__ == "__main__":
@@ -152,3 +158,4 @@ if __name__ == "__main__":
     LI, S = apriori(dataSet, minSupport=1.9/9)
     #print(LI)
     rules = generateRules(LI, S, minConf=0)
+    #printrules(rules)
