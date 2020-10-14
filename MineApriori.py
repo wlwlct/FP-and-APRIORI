@@ -118,7 +118,7 @@ def calcConf(freqSet, H, supportData, brl, minConf=0.7):
             prunedH.append(conseq)
     return prunedH
 
-# 递归计算频繁项集的规则
+
 def rulesFromConseq(freqSet, H, supportData, brl, minConf=0.7):
     print('*'*10,H[0])
     m = len(H[0])
@@ -131,7 +131,7 @@ def rulesFromConseq(freqSet, H, supportData, brl, minConf=0.7):
         if (len(Hmp1) >= 1):
             rulesFromConseq(freqSet, Hmp1, supportData, brl, minConf)
 
-# 生成关联规则
+# Generate Association rules
 def generateRules(L, supportData, minConf=0.7):
     bigRuleList = []
     for i in range(1, len(L)):
