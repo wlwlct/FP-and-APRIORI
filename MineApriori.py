@@ -108,10 +108,10 @@ def calcConf(freqSet, H, supportData, brl, minConf=0.7):
     prunedH = []
     for conseq in H:
         conf = supportData[freqSet]/supportData[freqSet-conseq]
-        print('freqSet:',freqSet)
-        print('conseq:',conseq)
-        print('freqSet-conseq',freqSet-conseq)
-        print('conf:',conf)
+        #print('freqSet:',freqSet)
+        #print('conseq:',conseq)
+        #print('freqSet-conseq',freqSet-conseq)
+        #print('conf:',conf)
         if conf >= minConf:
             #print(freqSet-conseq, '-->', conseq, 'conf:', conf)
             brl.append((freqSet,freqSet-conseq, conseq,supportData[freqSet-conseq],supportData[freqSet]))
@@ -120,11 +120,11 @@ def calcConf(freqSet, H, supportData, brl, minConf=0.7):
 
 
 def rulesFromConseq(freqSet, H, supportData, brl, minConf=0.7):
-    print('*'*10,H[0])
+    #print('*'*10,H[0])
     m = len(H[0])
     if (len(freqSet) > (m + 1)):
         Hmp1 = aprioriGen(H, m+1)
-        print('*'*20,Hmp1)
+        #print('*'*20,Hmp1)
         Hmp1 = calcConf(freqSet, Hmp1, supportData, brl, minConf)
         #print('Hmp1=', Hmp1)
         #print('len(Hmp1)=', len(Hmp1), 'len(freqSet)=', len(freqSet))
@@ -137,12 +137,12 @@ def generateRules(L, supportData, minConf=0.7):
     for i in range(1, len(L)):
         for freqSet in L[i]:
             H1 = [frozenset([item]) for item in freqSet]
-            print(H1)
+            #print(H1)
             if (i > 1):
                 rulesFromConseq(freqSet, H1, supportData, bigRuleList, minConf)
             else:
                 calcConf(freqSet, H1, supportData, bigRuleList, minConf)
-            print('-'*30)
+            #print('-'*30)
     return bigRuleList
 
 
