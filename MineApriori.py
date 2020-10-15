@@ -113,7 +113,7 @@ def calcConf(freqSet, H, supportData, brl, minConf=0.7):
         #print('conf:',conf)
         if conf >= minConf:
             #print(freqSet-conseq, '-->', conseq, 'conf:', conf)
-            brl.append((freqSet,freqSet-conseq, conseq,supportData[freqSet-conseq],supportData[freqSet]))
+            brl.append((freqSet,freqSet-conseq, conseq,supportData[freqSet-conseq],supportData[freqSet],supportData[conseq]))
             prunedH.append(conseq)
     return prunedH
 
@@ -146,12 +146,12 @@ def generateRules(L, supportData, minConf=0.7):
     return bigRuleList
 
 def printrules(rules,total):
-    C=['Frequent itemset','From','To','Confident number','Support Number']
+    C=['Frequent Itemset(AUB)','From(A)','To(B)','Confident Number(num of A)','Support Number(num of AUB)','Support Number(num of B)']
     Ruletable=pd.DataFrame(rules)
     Ruletable.columns=C
-    Ruletable['Confidence']=Ruletable['Support Number']/Ruletable['Confident number']
-    Ruletable['Support']=Ruletable['Support Number']/total
-    Ruletable['Lift']=Ruletable['Confidence']/Ruletable['Support']
+    Ruletable['Confidence']=Ruletable['Support Number(num of AUB)']/Ruletable['Confident Number(num of A)']
+    Ruletable['Support']=Ruletable['Support Number(num of AUB)']/total
+    Ruletable['Lift']=Ruletable['Support Number(num of AUB)']/Ruletable['Support Number(num of B)']
     return Ruletable
 
 def printsupport(S):
