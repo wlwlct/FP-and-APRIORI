@@ -176,41 +176,60 @@ def calconf(FPtree,headerTable,freqItemList,Support):
         S=Support[frozenset(itemset)]
         check_leng=len(itemset)-1
         if check_leng==0:
-            allrules.append((itemset,itemset,'nan',headerTable[list(itemset)[0]][0],S))
+            pass
+            #allrules.append((itemset,itemset,'nan',headerTable[list(itemset)[0]][0],S,'nan'))
             #print(itemset,':',headerTable[list(itemset)[0]][0])
-            print(itemset,'--->','Nothing','Confidence:',headerTable[list(itemset)[0]][0],'Support:',S)
+            #print(itemset,'--->','Nothing','Confidence:',headerTable[list(itemset)[0]][0],'Support:',S)
         for i in range(check_leng):
             n=i+1
             Test=[set(i) for i in itertools.combinations(itemset,n)]
             Rest=[itemset-i for i in Test]
-            print('Test:',Test)
-            print('Rest:',Rest)
+            #print('Test:',Test)
+            #print('Rest:',Rest)
             try:
                 Confidence=calSuppData(FPtree,headerTable,Test)
+                supportB=calSuppData(FPtree,headerTable,Rest)
                 #print('Condidence:',Confidence)
                 Confidence_value=[Confidence[frozenset(i)] for i in Test]
+                supportB_value=[supportB[frozenset(i)] for i in Rest]
                 #print('Confidence_value:',Confidence_value)
                 for rule in range(len(Test)):
-                    allrules.append((itemset,Test[rule],Rest[rule],Confidence_value[rule],S))
-                    print(Test[rule],'--->',Rest[rule],'Confidence:',Confidence_value[rule],'Support:',S)
+                    allrules.append((itemset,Test[rule],Rest[rule],Confidence_value[rule],S,supportB_value[rule]))
+                    #print(Test[rule],'--->',Rest[rule],'Confidence:',Confidence_value[rule],'Support:',S)
             except:
                 raise
-            print('-'*50)
+            #print('-'*50)
     return allrules
     
-            #Test=[i for i in Test if i not in From]
-
-
-if __name__=='__main__':
-    simpDat=loadSimpDat()
-    min_support=1.9/9*len(simpDat)
+def FP(simpDat,min_support):
     C1=GenC1(simpDat,min_support)
     myTree,myHeader=Build_tree(simpDat,C1)
     freqItemList,preFix=[],set([])
     mineTree(myTree, myHeader, min_support, preFix, freqItemList)
     Support=calSuppData(myTree,myHeader,freqItemList)#{Frozenset:count}
+    return freqItemList,Support, myTree,myHeader
 
-    Support[frozenset([])] = 1.0
+def printsupport(S):
+    S_table=pd.DataFrame.from_dict(S,orient='index').reset_index()
+    S_table.columns=['itemset','support']
+    S_table
+    return S_table
+
+def printrules(rules,total):
+    C=['Frequent Itemset(AUB)','From(A)','To(B)','Confident Number(num of A)','Support Number(num of AUB)','Support Number(num of B)']
+    Ruletable=pd.DataFrame(rules)
+    Ruletable.columns=C
+    Ruletable['Confidence']=Ruletable['Support Number(num of AUB)']/Ruletable['Confident Number(num of A)']
+    Ruletable['Support']=Ruletable['Support Number(num of AUB)']/total
+    Ruletable['Lift']=(Ruletable['Support Number(num of AUB)']/total)/(Ruletable['Support Number(num of B)']/total)/(Ruletable['Confident Number(num of A)']/total)
+    return Ruletable
+
+if __name__=='__main__':
+    simpDat=loadSimpDat()
+    min_support=1.9/9*len(simpDat)
+    freqItemList,Support,myTree,myHeader=FP(simpDat,min_support)
+
+    #Support[frozenset([])] = 1.0
     #freqItems = [frozenset(x) for x in freqItemList]
     print(freqItemList)
     min_conf=0.0
