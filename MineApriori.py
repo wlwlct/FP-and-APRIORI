@@ -145,11 +145,13 @@ def generateRules(L, supportData, minConf=0.7):
             #print('-'*30)
     return bigRuleList
 
-def printrules(rules):
+def printrules(rules,total):
     C=['Frequent itemset','From','To','Confident number','Support Number']
     Ruletable=pd.DataFrame(rules)
     Ruletable.columns=C
     Ruletable['Confidence']=Ruletable['Support Number']/Ruletable['Confident number']
+    Ruletable['Support']=Ruletable['Support Number']/total
+    Ruletable['Lift']=Ruletable['Confidence']/Ruletable['Support']
     return Ruletable
 
 def printsupport(S):
@@ -162,4 +164,4 @@ if __name__ == "__main__":
     dataSet = [['I1','I2','I5'],['I2','I4'],['I2','I3'],['I1','I2','I4'],['I1','I3'],['I2','I3'],['I1','I3'],['I1','I2','I3','I5'],['I1','I2','I3']]
     LI, S = apriori(dataSet, minSupport=1.9/9)
     rules = generateRules(LI, S, minConf=0)
-    #printrules(rules)
+    printrules(rules,len(dataSet))
