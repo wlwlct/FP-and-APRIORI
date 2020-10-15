@@ -28,7 +28,7 @@ class TreeNode:
 Generate Headertable and remove item does not meet minimum support
 |item|counts|Nodelink
 '''
-def GenC1(trans,min_support):
+def GenC1(trans,min_support,total):
     C1={}
     for i in trans:
         for ii in set(i):
@@ -42,7 +42,8 @@ def GenC1(trans,min_support):
                     C1[ii]+=trans[i]
                 except:
                     C1[ii]+=1
-    C1={key:value for key, value in C1.items() if value>=min_support}#include min_support
+    C1={key:value for key, value in C1.items() if value>=min_support*total}#include min_support
+    print('C1',C1)
     return {i:[k,None] for i,k in sorted(C1.items(),key=lambda x:x[1],reverse=True)}
 
 def link_same_items(curr,targetNode):
@@ -102,7 +103,7 @@ def findPrefixPath(baseitem,TreeNode):
         TreeNode=TreeNode.nodelink
     return CPB
 
-def mineTree(inTree, headertable, min_support, preFix, freqItemList):
+def mineTree(inTree, headertable, min_support, preFix, freqItemList,total):
     reverse_headertable = [v for v,_ in sorted(headertable.items(), key=lambda x: x[1][0])]
     for baseitem in reverse_headertable:
         newFreqSet = preFix.copy()
@@ -115,14 +116,14 @@ def mineTree(inTree, headertable, min_support, preFix, freqItemList):
         CPB = findPrefixPath(baseitem, headertable[baseitem][1])
         #if len(CPB)!=0:
             #print(pd.DataFrame({'Item':[str(baseitem) for i in range(len(CPB))],'Prefix':[(i) for i in CPB],'count':[(i) for i in CPB.values()]}))
-        CPBC1=GenC1(CPB,min_support)
+        CPBC1=GenC1(CPB,min_support,total)
         #if len(CPBC1)!=0:
             #print(CPBC1)
             #print('-'*30)
         CondFPTree, Condheadertable = Build_tree(list(CPB.keys()),CPBC1,list(CPB.values()))
         if Condheadertable is not None:
             #myCondTree.disp(1)
-            mineTree(CondFPTree, Condheadertable, min_support, newFreqSet, freqItemList)
+            mineTree(CondFPTree, Condheadertable, min_support, newFreqSet, freqItemList,total)
 
 
 '''
@@ -170,7 +171,7 @@ def calSuppData(FPtree,headerTable, freqItemList):
 '''
 Generate Confidence
 '''
-def calconf(FPtree,headerTable,freqItemList,Support):
+def calconf(FPtree,headerTable,freqItemList,Support,min_conf):
     allrules=[]
     for itemset in freqItemList:
         S=Support[frozenset(itemset)]
@@ -194,18 +195,19 @@ def calconf(FPtree,headerTable,freqItemList,Support):
                 supportB_value=[supportB[frozenset(i)] for i in Rest]
                 #print('Confidence_value:',Confidence_value)
                 for rule in range(len(Test)):
-                    allrules.append((itemset,Test[rule],Rest[rule],Confidence_value[rule],S,supportB_value[rule]))
-                    #print(Test[rule],'--->',Rest[rule],'Confidence:',Confidence_value[rule],'Support:',S)
+                    if Confidence_value[rule]*(min_conf)<=S:
+                        allrules.append((itemset,Test[rule],Rest[rule],Confidence_value[rule],S,supportB_value[rule]))
+                        #print(Test[rule],'--->',Rest[rule],'Confidence:',Confidence_value[rule],'Support:',S)
             except:
                 raise
             #print('-'*50)
     return allrules
     
-def FP(simpDat,min_support):
-    C1=GenC1(simpDat,min_support)
+def FP(simpDat,min_support,total):
+    C1=GenC1(simpDat,min_support,total)
     myTree,myHeader=Build_tree(simpDat,C1)
     freqItemList,preFix=[],set([])
-    mineTree(myTree, myHeader, min_support, preFix, freqItemList)
+    mineTree(myTree, myHeader, min_support, preFix, freqItemList,total)
     Support=calSuppData(myTree,myHeader,freqItemList)#{Frozenset:count}
     return freqItemList,Support, myTree,myHeader
 
@@ -226,11 +228,11 @@ def printrules(rules,total):
 
 if __name__=='__main__':
     simpDat=loadSimpDat()
-    min_support=1.9/9*len(simpDat)
-    freqItemList,Support,myTree,myHeader=FP(simpDat,min_support)
+    min_support=1.9/9 #*len(simpDat)
+    freqItemList,Support,myTree,myHeader=FP(simpDat,min_support,len(simpDat))
 
     #Support[frozenset([])] = 1.0
     #freqItems = [frozenset(x) for x in freqItemList]
     print(freqItemList)
-    min_conf=0.0
-    Conf=calconf(myTree,myHeader,freqItemList,Support)
+    min_conf=0.5
+    Conf=calconf(myTree,myHeader,freqItemList,Support,min_conf)
