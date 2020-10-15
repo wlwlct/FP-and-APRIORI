@@ -18,8 +18,8 @@ def createC1(dataSet):
 #Scan through datasets, remove the ones below min support
 def scanD(D, Ck, minSupport):
     # Generate counts for the C
-    print('D',D)
-    print('Ck',Ck)
+    #print('D',D)
+    #print('Ck',Ck)
     ssCnt = {}
     for tid in D:
         for can in Ck:
@@ -28,20 +28,20 @@ def scanD(D, Ck, minSupport):
                     ssCnt[can] = 1
                 else:
                     ssCnt[can] += 1
-    print('Cn with count:',pd.DataFrame.from_dict(ssCnt,orient='index'))
+    #print('Cn with count:',pd.DataFrame.from_dict(ssCnt,orient='index'))
     
     # Check weather meet minimum support or not, remove the ones below
     numItems = float(len(D))
     retList = []
     supportData = {}
     for key in ssCnt:
-        support = ssCnt[key]/numItems
+        support = ssCnt[key]
         #print('support',support,'min_support',minSupport,'Bool',support >= minSupport)
-        if support >= minSupport:
+        if support >= minSupport*numItems:
             retList.insert(0, key)
             supportData[key] = support
-    print('supportData:',pd.DataFrame.from_dict(supportData,orient='index'))
-    print('-'*30)
+    #print('supportData:',pd.DataFrame.from_dict(supportData,orient='index'))
+    #print('-'*30)
     return retList, supportData
 
 def notRedundant(mergedlist,Lkm1,km1,l1,l2):
@@ -118,7 +118,7 @@ def calcConf(freqSet, H, supportData, brl, minConf=0.7):
         #print('conf:',conf)
         if conf >= minConf:
             #print(freqSet-conseq, '-->', conseq, 'conf:', conf)
-            brl.append((freqSet,freqSet-conseq, conseq,supportData[freqSet-conseq],supportData[freqSet]))
+            brl.append((freqSet,freqSet-conseq, conseq,supportData[freqSet-conseq],supportData[freqSet],supportData[conseq]))
             prunedH.append(conseq)
     return prunedH
 
@@ -127,6 +127,7 @@ def rulesFromConseq(freqSet, H, supportData, brl, minConf=0.7):
     #print('*'*10,H[0])
     m = len(H[0])
     if (len(freqSet) > (m + 1)):
+        H = calcConf(freqSet, H, supportData, brl, minConf)
         Hmp1 = aprioriGen(H, m+1)
         #print('*'*20,Hmp1)
         Hmp1 = calcConf(freqSet, Hmp1, supportData, brl, minConf)
@@ -149,6 +150,22 @@ def generateRules(L, supportData, minConf=0.7):
             #print('-'*30)
     return bigRuleList
 
+def printrules(rules,total):
+    C=['Frequent Itemset(AUB)','From(A)','To(B)','Confident Number(num of A)','Support Number(num of AUB)','Support Number(num of B)']
+    Ruletable=pd.DataFrame(rules)
+    Ruletable.columns=C
+    Ruletable['Confidence']=Ruletable['Support Number(num of AUB)']/Ruletable['Confident Number(num of A)']
+    Ruletable['Support']=Ruletable['Support Number(num of AUB)']/total
+    Ruletable['Lift']=Ruletable['Support Number(num of AUB)']/Ruletable['Support Number(num of B)']
+    return Ruletable
+
+def printsupport(S):
+    S_table=pd.DataFrame.from_dict(S,orient='index').reset_index()
+    S_table.columns=['itemset','support']
+    S_table
+    return S_table
+
+
 #partition
 def partition(fulldataSet,n,minSupport):#n specific how many partitions you want
     split=[i for i in range(0,len(fulldataSet),round(len(fulldataSet)/n))]
@@ -160,15 +177,15 @@ def partition(fulldataSet,n,minSupport):#n specific how many partitions you want
         LI,_ = apriori(sub_dataset, minSupport)
         flat_list = [item for sublist in LI for item in sublist]
         partitionL=partitionL+flat_list
-    print(len(set(partitionL)))
-    print('***last scan***'*8)
+    #print(len(set(partitionL)))
+    #print('***last scan***'*8)
     alllist, allsupport=scanD(fulldataSet,list(set(partitionL)),minSupport)
     return alllist,allsupport
-
-
 
 if __name__ == "__main__":
     dataSet = [['I1','I2','I5'],['I2','I4'],['I2','I3'],['I1','I2','I4'],['I1','I3'],['I2','I3'],['I1','I3'],['I1','I2','I3','I5'],['I1','I2','I3']]
     LI, S = apriori(dataSet, minSupport=1.9/9)
-    print(LI)
+    #print(LI)
     LP,SP=partition(dataSet,3,minSupport=1.9/9)
+    rules = generateRules(LI, S, minConf=0)
+    #printrules(rules,len(dataSet))
