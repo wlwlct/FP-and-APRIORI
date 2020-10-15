@@ -43,7 +43,7 @@ def GenC1(trans,min_support,total):
                 except:
                     C1[ii]+=1
     C1={key:value for key, value in C1.items() if value>=min_support*total}#include min_support
-    print('C1',C1)
+    #print('C1',C1)
     return {i:[k,None] for i,k in sorted(C1.items(),key=lambda x:x[1],reverse=True)}
 
 def link_same_items(curr,targetNode):
@@ -231,8 +231,9 @@ if __name__=='__main__':
     min_support=1.9/9 #*len(simpDat)
     freqItemList,Support,myTree,myHeader=FP(simpDat,min_support,len(simpDat))
 
-    #Support[frozenset([])] = 1.0
-    #freqItems = [frozenset(x) for x in freqItemList]
-    print(freqItemList)
+    print('Dataset', simpDat)
+    print('frequent list:',freqItemList)
+    print(printsupport(Support))
     min_conf=0.5
     Conf=calconf(myTree,myHeader,freqItemList,Support,min_conf)
+    print(printrules(Conf,len(simpDat)))
