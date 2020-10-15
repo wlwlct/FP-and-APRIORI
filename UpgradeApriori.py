@@ -170,22 +170,21 @@ def printsupport(S):
 def partition(fulldataSet,n,minSupport):#n specific how many partitions you want
     split=[i for i in range(0,len(fulldataSet),round(len(fulldataSet)/n))]
     A=[(split[i],split[i+1]) if i+1!=len(split) else (split[i],len(fulldataSet)) for i in range(len(split))]
-    partitionL=[]
+    partitionL=set()
     #print(partitionL)
     for i in A:
-        sub_dataset=fulldataSet[i[0]:i[1]]
-        LI,_ = apriori(sub_dataset, minSupport)
-        flat_list = [item for sublist in LI for item in sublist]
-        partitionL=partitionL+flat_list
-    #print(len(set(partitionL)))
-    #print('***last scan***'*8)
-    alllist, allsupport=scanD(fulldataSet,list(set(partitionL)),minSupport)
+        LI,_ = apriori(fulldataSet[i[0]:i[1]], minSupport)
+        for sublist in LI:
+            for item in sublist:
+                partitionL.add(item)
+    alllist, allsupport=scanD(fulldataSet,partitionL,minSupport)
     return alllist,allsupport
 
 if __name__ == "__main__":
-    dataSet = [['I1','I2','I5'],['I2','I4'],['I2','I3'],['I1','I2','I4'],['I1','I3'],['I2','I3'],['I1','I3'],['I1','I2','I3','I5'],['I1','I2','I3']]
-    LI, S = apriori(dataSet, minSupport=1.9/9)
+    #simpDat = [['I1','I2','I5'],['I2','I4'],['I2','I3'],['I1','I2','I4'],['I1','I3'],['I2','I3'],['I1','I3'],['I1','I2','I3','I5'],['I1','I2','I3']]
+    simpDat=[]
+    #LI, S = apriori(dataSet, minSupport=1.9/9)
     #print(LI)
-    LP,SP=partition(dataSet,3,minSupport=1.9/9)
-    rules = generateRules(LI, S, minConf=0)
-    #printrules(rules,len(dataSet))
+    LP,SP=partition(simpDat,3,minSupport=0.2)
+    rules = generateRules(LP, SP, minConf=0.5)
+    printrules(rules,len(simpDat))
