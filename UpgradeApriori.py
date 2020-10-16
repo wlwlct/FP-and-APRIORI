@@ -79,6 +79,7 @@ def apriori(dataSet, minSupport=0.5):
     #Generate C1 
     C1 = createC1(dataSet)
     D=list(map(set,dataSet))
+    #print('C1',C1)
     L1, supportData = scanD(D, C1, minSupport)
 
     #print('supportData',pd.DataFrame(supportData.values(),supportData.keys()))
@@ -107,7 +108,6 @@ def apriori(dataSet, minSupport=0.5):
 '''
 Mine Association Rule
 '''
-#the real calculation from the table
 def calcConf(freqSet, H, supportData, brl, minConf=0.7):
     prunedH = []
     for conseq in H:
@@ -122,28 +122,31 @@ def calcConf(freqSet, H, supportData, brl, minConf=0.7):
             prunedH.append(conseq)
     return prunedH
 
-# Generate set
 def rulesFromConseq(freqSet, H, supportData, brl, minConf=0.7):
-    #print('*'*10,H[0])
     m = len(H[0])
-    if (len(freqSet) > (m + 1)):
+    #print('*'*10*m,'H[0]',H[0])
+    #print('H:',H)
+    if (len(freqSet) >(m+1)):
         H = calcConf(freqSet, H, supportData, brl, minConf)
         Hmp1 = aprioriGen(H, m+1)
-        #print('*'*20,Hmp1)
+        #print('*'*20*m,Hmp1)
         Hmp1 = calcConf(freqSet, Hmp1, supportData, brl, minConf)
         #print('Hmp1=', Hmp1)
         #print('len(Hmp1)=', len(Hmp1), 'len(freqSet)=', len(freqSet))
         if (len(Hmp1) >= 1):
             rulesFromConseq(freqSet, Hmp1, supportData, brl, minConf)
 
-# Combine all rules
+# Generate Association rules
 def generateRules(L, supportData, minConf=0.7):
+    allo=[[] for i in range(max([len(i) for i in L]))]
+    [allo[len(i)-1].append(i) for i in L]
+    L=allo
     bigRuleList = []
     for i in range(1, len(L)):
-        for freqSet in L[i]:
+        for freqSet in L[i]:#wont calculate with frequent item=1
             H1 = [frozenset([item]) for item in freqSet]
-            #print(H1)
-            if (i > 1):
+            #print('H1',H1)
+            if (i > 1):#if only has two items, no need to split the relation
                 rulesFromConseq(freqSet, H1, supportData, bigRuleList, minConf)
             else:
                 calcConf(freqSet, H1, supportData, bigRuleList, minConf)
@@ -157,6 +160,10 @@ def printrules(rules,total):
     Ruletable['Confidence']=Ruletable['Support Number(num of AUB)']/Ruletable['Confident Number(num of A)']
     Ruletable['Support']=Ruletable['Support Number(num of AUB)']/total
     Ruletable['Lift']=Ruletable['Support Number(num of AUB)']/Ruletable['Support Number(num of B)']
+    #print(Ruletable.shape)
+    Ruletable.drop_duplicates(inplace=True)
+    Ruletable.reset_index(drop=True,inplace=True)
+    #print(Ruletable.shape)
     return Ruletable
 
 def printsupport(S):
@@ -177,14 +184,15 @@ def partition(fulldataSet,n,minSupport):#n specific how many partitions you want
         for sublist in LI:
             for item in sublist:
                 partitionL.add(item)
-    alllist, allsupport=scanD(fulldataSet,partitionL,minSupport)
+    #print(len(partitionL))
+    alllist, allsupport=scanD(fulldataSet,list(partitionL),minSupport)
     return alllist,allsupport
 
 if __name__ == "__main__":
-    #simpDat = [['I1','I2','I5'],['I2','I4'],['I2','I3'],['I1','I2','I4'],['I1','I3'],['I2','I3'],['I1','I3'],['I1','I2','I3','I5'],['I1','I2','I3']]
-    simpDat=[]
-    #LI, S = apriori(dataSet, minSupport=1.9/9)
+    simpDat = [['I1','I2','I5'],['I2','I4'],['I2','I3'],['I1','I2','I4'],['I1','I3'],['I2','I3'],['I1','I3'],['I1','I2','I3','I5'],['I1','I2','I3']]
+    #LI, S = apriori(simpDat, minSupport=0.5)
     #print(LI)
-    LP,SP=partition(simpDat,3,minSupport=0.2)
-    rules = generateRules(LP, SP, minConf=0.5)
-    printrules(rules,len(simpDat))
+    LI,S=partition(simpDat,3,minSupport=1.9/9)
+    print(printsupport(S))
+    rules = generateRules(LI, S, minConf=0)
+    print(printrules(rules,len(simpDat)))
