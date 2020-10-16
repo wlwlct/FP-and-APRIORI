@@ -26,6 +26,7 @@ def scanD(D, Ck, minSupport):
                 else:
                     ssCnt[can] += 1
     #print('Cn with count:',pd.DataFrame.from_dict(ssCnt,orient='index'))
+
     # Check weather meet minimum support or not, remove the ones below
     numItems = float(len(D))
     retList = []
@@ -63,11 +64,13 @@ def aprioriGen(Lk, k):
             #If the all elements exept the last are same, merge two elements
             if L1 == L2:
                 mergedlist=Lk[i] | Lk[j]
-                #print('---------',mergedlist,k-1)
+                #print('---------','|',mergedlist,'|',k-1,'\n')
+                #print('*Generate*','|',mergedlist,'|',k-1,'\n')
                 if notRedundant(mergedlist,Lk,k-1,Lk[i],Lk[j]):
                     retList.append(mergedlist)
                 #else:
-                #    print('----Remove-----',mergedlist,k-1)
+                    #print('----Remove-----','|',mergedlist,'|',k-1,'\n')
+                    #print('*Remove*','|',mergedlist,'|',k-1,'\n')
     return retList
 
 
@@ -146,12 +149,21 @@ def generateRules(L, supportData, minConf=0.7):
     return bigRuleList
 
 def printrules(rules,total):
-    C=['Frequent Itemset(AUB)','From(A)','To(B)','Confident Number(num of A)','Support Number(num of AUB)','Support Number(num of B)']
-    Ruletable=pd.DataFrame(rules)
-    Ruletable.columns=C
-    Ruletable['Confidence']=Ruletable['Support Number(num of AUB)']/Ruletable['Confident Number(num of A)']
-    Ruletable['Support']=Ruletable['Support Number(num of AUB)']/total
-    Ruletable['Lift']=Ruletable['Support Number(num of AUB)']/Ruletable['Support Number(num of B)']
+    try:
+        C=['Frequent Itemset(AUB)','From(A)','To(B)','Confident Number(num of A)','Support Number(num of AUB)','Support Number(num of B)']  
+        Ruletable=pd.DataFrame(rules)
+        Ruletable.columns=C
+        Ruletable['Confidence']=Ruletable['Support Number(num of AUB)']/Ruletable['Confident Number(num of A)']
+        Ruletable['Support']=Ruletable['Support Number(num of AUB)']/total
+        Ruletable['Lift']=(Ruletable['Support Number(num of AUB)']/total)/(Ruletable['Support Number(num of B)']/total)/(Ruletable['Confident Number(num of A)']/total)
+        #print(Ruletable.shape)
+        Ruletable.drop_duplicates(inplace=True)
+        Ruletable.reset_index(drop=True,inplace=True)
+        #print(Ruletable.shape)
+    except:
+        raise
+        #print('May not be able to generate rule')
+        return
     return Ruletable
 
 def printsupport(S):
@@ -163,5 +175,7 @@ def printsupport(S):
 if __name__ == "__main__":
     dataSet = [['I1','I2','I5'],['I2','I4'],['I2','I3'],['I1','I2','I4'],['I1','I3'],['I2','I3'],['I1','I3'],['I1','I2','I3','I5'],['I1','I2','I3']]
     LI, S = apriori(dataSet, minSupport=1.9/9)
+    print('Frequent List',LI)
+    print(printsupport(S))
     rules = generateRules(LI, S, minConf=0)
-    printrules(rules,len(dataSet))
+    print(printrules(rules,len(dataSet)))
